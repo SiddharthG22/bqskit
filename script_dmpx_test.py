@@ -50,6 +50,10 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
         compiled = compiler.compile(circuit, workflow)
         duration = time.time() - start_time
 
+        """
+        NB: PLEASE DO NOT UNCOMMENT THE BELOW CODE. WE ARE CURRENTLY WORKING ON OPTIMIZING DIAGONAL EXTRACTION AND THIS CODE IS VERY MUCH 
+            A WIP. 
+            
         unoptimized_variable_unitaries = []
         for op in compiled:
             if isinstance(op.gate, VariableUnitaryGate) and op.gate.num_qudits > min_qudit_size:
@@ -132,6 +136,7 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
             print(f" - 4-Qubit VariableUnitaryGates: {result['4 Qubit Variable Unitaries']}")
             print(f" - 5-Qubit VariableUnitaryGates: {result['5 Qubit Variable Unitaries']}")
             print(f" - Actual CNOT Count: {gate_counter['Actual CNOT Count']}\n")
+        """
 
     # Construct unitary matrix from CNOT gate
     # print(f"\n - Original Unitary Dimensions: {og_unitary.shape}")
@@ -189,10 +194,10 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
     if isinstance(fidelity_check, str):
         print(f" - Note: {fidelity_check}")
     else:
-        print(f" - Fidelity (np.allclose): {fidelity_check}")
+        print(f" - Fidelity: {fidelity_check}")
     
     result = {
-        "decompose_all": True,
+        "decompose_all": decompose_all,
         "qubits": num_qudits,
         "min_qudit_size": min_qudit_size,
         "perform_extract": perform_extract,
@@ -205,19 +210,22 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
         "hilbert_cost": fidelity_cost,
     }
     result.update(gate_counter)
+    
+    dca = "Decompose All" if decompose_all else "Decompose Twice"
 
-    print(f"\n--------- Old Gate Summary ---------")
+    print(f"\n--------- Gate Summary ({dca}) ---------")
+    print(f" - Actual CNOT Count: {gate_counter['Actual CNOT Count']}")
     print(f" - 2-Qubit VariableUnitaryGates: {result['2 Qubit Variable Unitaries']}")
     print(f" - 3-Qubit VariableUnitaryGates: {result['3 Qubit Variable Unitaries']}")
     print(f" - 4-Qubit VariableUnitaryGates: {result['4 Qubit Variable Unitaries']}")
     print(f" - 5-Qubit VariableUnitaryGates: {result['5 Qubit Variable Unitaries']}")
-    print(f" - Actual CNOT Count: {gate_counter['Actual CNOT Count']}")
+    print(f" - Overall CNOT Count: {gate_counter['Actual CNOT Count'] + ((result['2 Qubit Variable Unitaries'] - 1) * 2) + (1 * 3)}")
 
     print(f"\n--------- Timing ---------")
-    print(f"\n⏱ Compile Time: {duration:.2f} seconds\n")
+    print(f"\nCompile Time: {duration:.2f} seconds\n")
     return result
 
-def save_results_csv(results, filename='test_files/decompose_parallel_test.csv'):
+def save_results_csv(results, filename='test_files/decompose_full_results.csv'):
     if not results:
         return
     
@@ -248,24 +256,17 @@ def save_results_csv(results, filename='test_files/decompose_parallel_test.csv')
 if __name__ == "__main__":
     results = []
 
-    nq = 6
-    # mqs = [2, 3, 4, 5]
-    mq = 2
-    pe = [False, True]
+    num_qudits, min_qudit_size, perform_extraction_enabled = [3, 4, 5, 6], 2, [False]
 
-    curr_job = 1
-    total_jobs = len(pe) 
+    current_job = 1
+    total_jobs = len(num_qudits) * len(perform_extraction_enabled) 
 
-    # print(f"\n[{curr_job}/1] Running BZXZ Decomposition: qubits={nq}, min_qudit_size={mq}, perform_extract={False}, decompose_all={True}\n")
-    # res = run_experiment(nq, min_qudit_size=mq, perform_extract=False, decompose_all=True)
-    # results.append(res)
-    # curr_job += 1
-
-    for p in pe:
-        print(f"\n[{curr_job}/{total_jobs}] Running BZXZ Decomposition: qubits={nq}, min_qudit_size={mq}, perform_extract={p}, decompose_all={True}\n")
-        res = run_experiment(nq, min_qudit_size=mq, perform_extract=p, decompose_all=True)
-        results.append(res)
-        curr_job += 1
+    for p in perform_extraction_enabled:
+        for n in num_qudits:
+            print(f"\n[{current_job}/{total_jobs}] Running BZXZ Decomposition: qubits={n}, min_qudit_size={min_qudit_size}, perform_extract={p}, decompose_all={True}\n")
+            res = run_experiment(num_qudits=n, min_qudit_size=min_qudit_size, perform_extract=p, decompose_all=True)
+            results.append(res)
+            current_job += 1
 
 
     save_results_csv(results)
