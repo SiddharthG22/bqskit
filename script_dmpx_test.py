@@ -50,9 +50,8 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
         compiled = compiler.compile(circuit, workflow)
         duration = time.time() - start_time
 
-        """
-        NB: PLEASE DO NOT UNCOMMENT THE BELOW CODE. WE ARE CURRENTLY WORKING ON OPTIMIZING DIAGONAL EXTRACTION AND THIS CODE IS VERY MUCH 
-            A WIP. 
+        # NB: PLEASE DO NOT UNCOMMENT THE BELOW CODE. WE ARE CURRENTLY WORKING ON OPTIMIZING DIAGONAL EXTRACTION AND THIS CODE IS VERY MUCH 
+        #     A WIP. 
             
         unoptimized_variable_unitaries = []
         for op in compiled:
@@ -130,13 +129,12 @@ def run_experiment(num_qudits: int, min_qudit_size: int, perform_extract: bool, 
             }
             result.update(gate_counter)
 
-            print(f"\n--------- New Gate Summary ---------")
+            print(f"\n--------- New Gate Summary ({dca}) ---------")
             print(f" - 2-Qubit VariableUnitaryGates: {result['2 Qubit Variable Unitaries']}")
             print(f" - 3-Qubit VariableUnitaryGates: {result['3 Qubit Variable Unitaries']}")
             print(f" - 4-Qubit VariableUnitaryGates: {result['4 Qubit Variable Unitaries']}")
             print(f" - 5-Qubit VariableUnitaryGates: {result['5 Qubit Variable Unitaries']}")
             print(f" - Actual CNOT Count: {gate_counter['Actual CNOT Count']}\n")
-        """
 
     # Construct unitary matrix from CNOT gate
     # print(f"\n - Original Unitary Dimensions: {og_unitary.shape}")
